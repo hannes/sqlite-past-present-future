@@ -8,8 +8,8 @@ template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
 template <class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
 void assert_success(const std::unique_ptr<duckdb::QueryResult> &result) {
-  if (!result->success) {
-    throw std::runtime_error(result->error);
+  if (result->HasError()) {
+    throw std::runtime_error(result->GetError());
   }
 }
 
@@ -139,8 +139,8 @@ public:
               result = stmts_[8]->Execute(s_id, p.sf_type, p.start_time,
                                           p.end_time, p.numberx);
               // Constraint violation is an acceptable error.
-              if (!result->success &&
-                  result->error.rfind("Constraint", 0) != 0) {
+              if (result->HasError() &&
+                  result->GetError().rfind("Constraint", 0) != 0) {
                 assert_success(result);
               }
 

@@ -9,8 +9,8 @@
 #include <thread>
 
 void assert_success(const std::unique_ptr<duckdb::QueryResult> &result) {
-  if (!result->success) {
-    throw std::runtime_error(result->error);
+  if (result->HasError()) {
+    throw std::runtime_error(result->GetError());
   }
 }
 

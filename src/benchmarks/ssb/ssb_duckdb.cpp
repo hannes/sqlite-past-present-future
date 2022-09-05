@@ -4,8 +4,8 @@
 #include "systems/duckdb/duckdb.hpp"
 
 void assert_success(const std::unique_ptr<duckdb::QueryResult> &result) {
-  if (!result->success) {
-    throw std::runtime_error(result->error);
+  if (result->HasError()) {
+    throw std::runtime_error(result->GetError());
   }
 }
 
@@ -15,6 +15,8 @@ int main(int argc, char **argv) {
   cxxopts::OptionAdder adder = options.add_options("DuckDB");
   adder("load", "Load the database");
   adder("run", "Run the benchmark");
+  adder("sqlite_scanner", "Run the benchmark using sqlite scanner");
+
   adder("memory_limit", "Memory limit",
         cxxopts::value<std::string>()->default_value("1GB"));
   adder("threads", "Number of threads",
@@ -48,12 +50,21 @@ int main(int argc, char **argv) {
         conn.Query("COPY lineorder FROM 'lineorder.tbl' (AUTO_DETECT TRUE)"));
   }
 
+
   if (result.count("run")) {
     duckdb::Connection conn(db);
 
+if (result.count("sqlite_scanner")) {
+
+    assert_success(conn.Query("INSTALL sqlite_scanner"));
+    assert_success(conn.Query("LOAD sqlite_scanner"));
+    assert_success(conn.Query("CALL SQLITE_ATTACH('ssb.sqlite',overwrite=true)"));
+}
+
+
+
     assert_success(conn.Query("PRAGMA memory_limit='" + memory_limit + "'"));
     assert_success(conn.Query("PRAGMA threads=" + threads));
-
     assert_success(conn.Query("SELECT * FROM lineorder"));
     assert_success(conn.Query("SELECT * FROM part"));
     assert_success(conn.Query("SELECT * FROM supplier"));
